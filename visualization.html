@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Particle Visualization</title>
+    <style>
+        body {
+            margin: 0;
+        }
+    </style>
+
+</head>
+
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+
+    <div id="visualization-container">
+        <!-- Three.js will append its canvas to this div -->
+
+        <div id="legend">
+        </div>
+        <div id="estimation">
+            <span id = "inside">0</span><span> in/</span><span id = "outside">0</span><span> out </span>
+        </div>
+    </div>
+
+    <script>
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 15;
+
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        const geometry = new THREE.BoxGeometry(0.1, 0.1, 0.1); // Placeholder for particles
+
+
+        const particles = [];
+
+        let angle = 0; // Initial angle
+        const RADIUS = 15; // Radius of the camera's circular motion
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Update the angle
+            angle += 0.001;
+
+            // Compute the new camera position
+            camera.position.x = RADIUS * Math.cos(angle);
+            camera.position.z = RADIUS * Math.sin(angle);
+
+            // Point the camera to the center of the scene
+            camera.lookAt(scene.position);
+
+            renderer.render(scene, camera);
+        }
+        const socket = io.connect('http://localhost:3000');
+        socket.on("connect", () => {
+            console.log("connected");
+        });
+        socket.on('disconnected', socketid => {
+            removeLegendEntry(socketid);
+        })
+        socket.on('broadcastedParticleData', (...data) => {
+            console.log(data);
+            setStats(data[0].inside, data[0].total, data[0].inside/data[0].total);
+
+            // Create and add new particles
+            if(particles.length < 20000) {  
+                data[0].data.forEach(pData => {
+                    const particle = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ color: "#"+data[0].color.color }));
+                    particle.position.set(pData.x * 5, pData.y * 5, pData.z * 5);
+
+                    scene.add(particle);
+                    particles.push(particle);
+                });
+            }
+            clearAllLegendEntries();
+            let receivedMap = new Map(JSON.parse(data[0].computers));
+            //console.log(receivedMap);
+            receivedMap.forEach((value, key) => {
+                ///console.log(key, value);
+                addLegendEntry(key, "#"+value.color, value.name + ": " + value.count);
+            })
+            //console.log(receivedMap);
+        });
+        const container = document.getElementById('visualization-container');
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.domElement.classList.add('canvas-threejs');
+        container.appendChild(renderer.domElement);
+
+        animate();
+
+        // Modified addLegendEntry to associate each entry with an id
+        function addLegendEntry(id, color, name) {
+            const legend = document.getElementById('legend');
+
+            // Create the legend item and its components
+            const legendItem = document.createElement('div');
+            legendItem.className = 'legend-item';
+            legendItem.id = id;  // Setting the provided id to the legend item
+
+            const colorBox = document.createElement('div');
+            colorBox.className = 'color-box';
+            colorBox.style.backgroundColor = color;
+
+            const colorName = document.createElement('span');
+            colorName.textContent = name;
+
+            // Append the color box and name to the legend item
+            legendItem.appendChild(colorBox);
+            legendItem.appendChild(colorName);
+
+            // Append the legend item to the legend
+            legend.appendChild(legendItem);
+        }
+
+        function setStats(inside, total, calc){
+            const insidec = document.getElementById('inside');
+            const totalc = document.getElementById('outside');
+            insidec.innerText = inside;
+            totalc.innerText = total;
+        }
+
+
+        // Function to remove a legend entry by its id
+        function removeLegendEntry(id) {
+            const legendItem = document.getElementById(id);
+            if (legendItem) {
+                legendItem.remove();
+            } else {
+                console.warn("Item with ID " + id + " not found in the legend!");
+            }
+        }
+        function clearAllLegendEntries() {
+            const legend = document.getElementById('legend');
+            while (legend.firstChild) {
+                legend.removeChild(legend.firstChild);
+            }
+        }
+
+
+                // Add legend entries
+        addLegendEntry('0', 'gray', 'No computers connected.');
+
+    </script>
+
+    <style>
+        #visualization-container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #legend {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            padding: 10px;
+            z-index: 2;
+            font-size: 24px;
+            font-family: Helvetica, Arial, sans-serif;
+            color: rgb(228, 228, 233);
+        }
+
+        #estimation {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            padding: 10px;
+            z-index: 2;
+            font-size: 24px;
+            font-family: Helvetica, Arial, sans-serif;
+            color: rgb(228, 228, 233);
+        }
+
+        #legend span {
+            padding-left: 10px;
+        }
+
+        .canvas-threejs {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .color-box {
+            width: 20px;
+            height: 20px;
+            margin-right: 5px;
+            padding: 4px;
+        }
+    </style>
+</body>
+
+</html>
