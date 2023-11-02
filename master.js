@@ -23,7 +23,21 @@ io.on('connection', (socket) => {
         }
 
         let index = findLowestMissingNumber(indexSet);
-        const rgb = generateRGB();
+        let rgb = generateRGB();
+        switch(index){
+            case 1: 
+                rgb = '79ff00';
+                break;
+            case 2:
+                rgb = '00beff';
+                break;
+            case 3:
+                rgb = 'ff006b';
+                break;
+            case 4:
+                rgb = '0057ff';
+                break;
+        }
         socketColors.set(socket.id, {"color": rgb, "count": 0, "index": index, "name" : "Computer " + index});
         console.log("Assigned index ", index, " to id ", socket.id);
     }); 

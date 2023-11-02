@@ -15,7 +15,7 @@ function generateRandomParticles(count) {
 }
 
 setInterval(() => {
-    const particleData = generateRandomParticles(2); // Generate 100 random particles
+    const particleData = generateRandomParticles(20); // Generate 100 random particles
     socket.emit('particleData', particleData.data, particleData.insideRadius);
 }, 50);
 

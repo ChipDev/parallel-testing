@@ -21,8 +21,14 @@
 
         <div id="legend">
         </div>
+        <div id="key">
+            <span>Monte Carlo Simulation: Parallelized</span>
+        </div>
         <div id="estimation">
-            <span id = "inside">0</span><span> in/</span><span id = "outside">0</span><span> out </span>
+            <span id = "inside">0</span><span> in/</span><span id = "outside">0</span><span> total = </span><span id="calc">0</span><span> / 6</span>
+        </div>
+        <div id="imageContainer">
+            <img src="https://www.iridium.com/wp-content/uploads/2019/02/IMG_Logo_Gateworks_2400_Transparent_011020.png" alt="Gateworks">
         </div>
     </div>
 
@@ -67,7 +73,8 @@
         })
         socket.on('broadcastedParticleData', (...data) => {
             console.log(data);
-            setStats(data[0].inside, data[0].total, data[0].inside/data[0].total);
+            setStats(data[0].inside, data[0].total, parseFloat(data[0].inside/data[0].total*6).toPrecision(5));
+            console.log(data[0].inside/parseFloat(data[0].total));
 
             // Create and add new particles
             if(particles.length < 20000) {  
@@ -122,8 +129,10 @@
         function setStats(inside, total, calc){
             const insidec = document.getElementById('inside');
             const totalc = document.getElementById('outside');
+            const calcc = document.getElementById('calc');
             insidec.innerText = inside;
             totalc.innerText = total;
+            calcc.innerText = calc;
         }
 
 
@@ -160,6 +169,30 @@
         #legend {
             position: absolute;
             top: 10px;
+            left: 10px;
+            padding: 10px;
+            z-index: 2;
+            font-size: 24px;
+            font-family: Helvetica, Arial, sans-serif;
+            color: rgb(228, 228, 233);
+        }
+        #imageContainer {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 15%;
+            height: auto;  /* maintain the aspect ratio */
+            overflow: hidden;  /* in case the image is too tall */
+            z-index: 2;
+        }
+
+        #imageContainer img {
+            width: 100%;  /* makes the image take up the full width of its container */
+            height: auto;  /* maintain the aspect ratio */
+        }
+        #key {
+            position: absolute;
+            bottom: 50px;
             left: 10px;
             padding: 10px;
             z-index: 2;
